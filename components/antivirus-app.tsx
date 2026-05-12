@@ -29,13 +29,18 @@ export default function AntivirusApp() {
     const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [dailyTip, setDailyTip] = useState<string | null>(null);
-    const [activeView, setActiveView] = useState<'dashboard' | 'quarantine' | 'history'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'quarantine' | 'history' | 'settings'>('dashboard');
     const [isBoostActive, setIsBoostActive] = useState(false);
     const [boostTimer, setBoostTimer] = useState(0);
     const [scanHistory, setScanHistory] = useState([
         { id: 'h1', date: '2026-05-11', time: '14:30:22', status: 'Clean', threatsFound: 0 },
         { id: 'h2', date: '2026-05-10', time: '09:12:45', status: 'Threats Detected', threatsFound: 2 },
     ]);
+    const [scanSettings, setScanSettings] = useState({
+        scanDepth: 'Deep',
+        sensitivity: 'High',
+        autoQuarantine: false
+    });
 
     const toggleBoost = () => {
         if (!isBoostActive) {
@@ -220,6 +225,12 @@ Response format: Simple markdown with headers.`,
                         className={`transition-colors ${activeView === 'history' ? 'text-white border-b border-blue-500 pb-1' : 'hover:text-white'}`}
                     >
                         History
+                    </button>
+                    <button 
+                        onClick={() => setActiveView('settings')}
+                        className={`transition-colors ${activeView === 'settings' ? 'text-white border-b border-blue-500 pb-1' : 'hover:text-white'}`}
+                    >
+                        Settings
                     </button>
                     
                     {/* Scan Boost Toggle */}
@@ -633,7 +644,7 @@ Response format: Simple markdown with headers.`,
                                 )}
                             </div>
                         </div>
-                    ) : (
+                    ) : activeView === 'history' ? (
                         <div className="space-y-8 w-full">
                             {/* History View */}
                             <div className="flex justify-between items-end">
@@ -708,6 +719,125 @@ Response format: Simple markdown with headers.`,
                                     </ScrollArea>
                                 </CardContent>
                             </Card>
+                        </div>
+                    ) : (
+                        <div className="space-y-8 w-full max-w-4xl mx-auto">
+                            {/* Settings View */}
+                            <div className="flex justify-between items-end">
+                                <div className="space-y-2">
+                                    <div className="inline-block px-3 py-1 rounded bg-blue-500/10 text-blue-400 text-[10px] font-bold tracking-widest uppercase border border-blue-500/20">
+                                        ENGINE CONFIGURATION
+                                    </div>
+                                    <h1 className="text-4xl font-bold text-white tracking-tight uppercase italic">Core <span className="text-blue-500 not-italic underline underline-offset-4 decoration-2">Settings</span></h1>
+                                    <p className="text-slate-400 text-sm">Fine-tune the AI scanning parameters and heuristic engine behavior for maximum efficiency.</p>
+                                </div>
+                                <Button 
+                                    onClick={() => setActiveView('dashboard')}
+                                    variant="outline" 
+                                    className="border-white/10 text-white hover:bg-white/5 uppercase text-xs font-bold tracking-widest"
+                                >
+                                    Back to Dashboard
+                                </Button>
+                            </div>
+
+                            <Separator className="bg-white/5" />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none">
+                                    <CardHeader className="border-b border-white/5">
+                                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Scanning Depth</CardTitle>
+                                        <CardDescription className="text-[10px] text-slate-500 uppercase">Determines how deep the engine probes system files</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6 space-y-4">
+                                        {['Shallow', 'Deep', 'Full'].map((depth) => (
+                                            <button 
+                                                key={depth}
+                                                onClick={() => setScanSettings(prev => ({ ...prev, scanDepth: depth }))}
+                                                className={`w-full p-4 flex items-center justify-between border transition-all ${
+                                                    scanSettings.scanDepth === depth 
+                                                    ? 'bg-blue-500/10 border-blue-500/50 text-blue-400' 
+                                                    : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
+                                                }`}
+                                            >
+                                                <div className="text-left">
+                                                    <span className="text-xs font-bold uppercase tracking-widest block">{depth} Scan</span>
+                                                    <span className="text-[9px] opacity-60">
+                                                        {depth === 'Shallow' && 'Quick check of active processes and core paths.'}
+                                                        {depth === 'Deep' && 'Standard probing of user data and system libraries.'}
+                                                        {depth === 'Full' && 'Exhaustive bit-by-bit inspection of all storage nodes.'}
+                                                    </span>
+                                                </div>
+                                                {scanSettings.scanDepth === depth && <ShieldCheck className="w-4 h-4" />}
+                                            </button>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none">
+                                    <CardHeader className="border-b border-white/5">
+                                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Heuristic Sensitivity</CardTitle>
+                                        <CardDescription className="text-[10px] text-slate-500 uppercase">Controls the AI detection threshold for anomalies</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6 space-y-4">
+                                        {['Low', 'Medium', 'High', 'Paranoid'].map((sense) => (
+                                            <button 
+                                                key={sense}
+                                                onClick={() => setScanSettings(prev => ({ ...prev, sensitivity: sense }))}
+                                                className={`w-full p-4 flex items-center justify-between border transition-all ${
+                                                    scanSettings.sensitivity === sense 
+                                                    ? 'bg-blue-500/10 border-blue-500/50 text-blue-400' 
+                                                    : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
+                                                }`}
+                                            >
+                                                <div className="text-left">
+                                                    <span className="text-xs font-bold uppercase tracking-widest block">{sense} Sensitivity</span>
+                                                    <span className="text-[9px] opacity-60">
+                                                        {sense === 'Low' && 'Optimized for performance, minimal false positives.'}
+                                                        {sense === 'Medium' && 'Balanced detection for daily security needs.'}
+                                                        {sense === 'High' && 'Stringent verification of all suspicious activities.'}
+                                                        {sense === 'Paranoid' && 'Zero-trust architecture. Flags any deviation.'}
+                                                    </span>
+                                                </div>
+                                                {scanSettings.sensitivity === sense && <Activity className="w-4 h-4" />}
+                                            </button>
+                                        ))}
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none md:col-span-2">
+                                    <CardContent className="p-6 flex items-center justify-between">
+                                        <div className="space-y-1">
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-white">Automated Remediation</h3>
+                                            <p className="text-[10px] text-slate-500 uppercase">Automatically quarantine critical threats without confirmation</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => setScanSettings(prev => ({ ...prev, autoQuarantine: !prev.autoQuarantine }))}
+                                            className={`relative w-12 h-6 rounded-full transition-colors duration-300 flex items-center p-1 ${scanSettings.autoQuarantine ? 'bg-blue-600 shadow-[0_0_15px_#2563eb]' : 'bg-slate-800'}`}
+                                        >
+                                            <motion.div 
+                                                animate={{ x: scanSettings.autoQuarantine ? 24 : 0 }}
+                                                className="w-4 h-4 bg-white rounded-full shadow-lg"
+                                            />
+                                        </button>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div className="flex justify-end gap-4">
+                                <Button 
+                                    variant="ghost" 
+                                    className="text-slate-500 hover:text-white uppercase text-[10px] font-bold tracking-widest"
+                                    onClick={() => setScanSettings({ scanDepth: 'Deep', sensitivity: 'High', autoQuarantine: false })}
+                                >
+                                    Reset to Defaults
+                                </Button>
+                                <Button 
+                                    className="bg-blue-600 hover:bg-blue-500 text-white uppercase text-[10px] font-bold tracking-widest px-8"
+                                    onClick={() => setActiveView('dashboard')}
+                                >
+                                    Apply Configuration
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </div>
