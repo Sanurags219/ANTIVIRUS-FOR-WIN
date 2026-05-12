@@ -39,7 +39,8 @@ export default function AntivirusApp() {
     const [scanSettings, setScanSettings] = useState({
         scanDepth: 'Deep',
         sensitivity: 'High',
-        autoQuarantine: false
+        autoQuarantine: false,
+        schedule: 'None'
     });
 
     const toggleBoost = () => {
@@ -805,6 +806,40 @@ Response format: Simple markdown with headers.`,
                                 </Card>
 
                                 <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none md:col-span-2">
+                                    <CardHeader className="border-b border-white/5">
+                                        <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Scan Scheduling</CardTitle>
+                                        <CardDescription className="text-[10px] text-slate-500 uppercase">Automate system protection cycles</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="p-6">
+                                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                                            {['None', 'Daily', 'Weekly', 'Bi-Weekly'].map((freq) => (
+                                                <button 
+                                                    key={freq}
+                                                    onClick={() => setScanSettings(prev => ({ ...prev, schedule: freq }))}
+                                                    className={`p-3 flex flex-col items-center justify-center gap-2 border transition-all ${
+                                                        scanSettings.schedule === freq 
+                                                        ? 'bg-blue-500/10 border-blue-500/50 text-blue-400' 
+                                                        : 'bg-white/5 border-white/5 text-slate-400 hover:bg-white/10'
+                                                    }`}
+                                                >
+                                                    <span className="text-xs font-bold uppercase tracking-widest">{freq}</span>
+                                                    {scanSettings.schedule === freq && <CheckCircle2 className="w-3 h-3" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {scanSettings.schedule !== 'None' && (
+                                            <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/20 rounded flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <Activity className="w-4 h-4 text-blue-400" />
+                                                    <span className="text-[10px] text-slate-300 uppercase font-bold tracking-tight">Next Scheduled Scan: Today at 02:00 AM</span>
+                                                </div>
+                                                <Badge className="bg-blue-600 text-white text-[8px]">ACTIVE</Badge>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none md:col-span-2">
                                     <CardContent className="p-6 flex items-center justify-between">
                                         <div className="space-y-1">
                                             <h3 className="text-sm font-bold uppercase tracking-widest text-white">Automated Remediation</h3>
@@ -827,7 +862,7 @@ Response format: Simple markdown with headers.`,
                                 <Button 
                                     variant="ghost" 
                                     className="text-slate-500 hover:text-white uppercase text-[10px] font-bold tracking-widest"
-                                    onClick={() => setScanSettings({ scanDepth: 'Deep', sensitivity: 'High', autoQuarantine: false })}
+                                    onClick={() => setScanSettings({ scanDepth: 'Deep', sensitivity: 'High', autoQuarantine: false, schedule: 'None' })}
                                 >
                                     Reset to Defaults
                                 </Button>
