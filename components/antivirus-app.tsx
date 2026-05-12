@@ -30,6 +30,35 @@ export default function AntivirusApp() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [dailyTip, setDailyTip] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'dashboard' | 'quarantine'>('dashboard');
+    const [isBoostActive, setIsBoostActive] = useState(false);
+    const [boostTimer, setBoostTimer] = useState(0);
+
+    const toggleBoost = () => {
+        if (!isBoostActive) {
+            setIsBoostActive(true);
+            setBoostTimer(300); // 5 minutes
+        } else {
+            setIsBoostActive(false);
+            setBoostTimer(0);
+        }
+    };
+
+    // Boost timer countdown
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (isBoostActive && boostTimer > 0) {
+            timer = setInterval(() => {
+                setBoostTimer(prev => {
+                    if (prev <= 1) {
+                        setIsBoostActive(false);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        }
+        return () => clearInterval(timer);
+    }, [isBoostActive, boostTimer]);
 
     const handleQuarantine = (id: string) => {
         setDetectedThreats(prev => prev.map(t => t.id === id ? { ...t, status: 'Quarantined' } : t));
@@ -63,9 +92,11 @@ export default function AntivirusApp() {
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (isScanning && scanProgress < 100) {
+            const speed = isBoostActive ? 50 : 200;
+            const incrementBase = isBoostActive ? 12 : 5;
             interval = setInterval(() => {
                 setScanProgress(prev => {
-                    const next = prev + Math.random() * 5;
+                    const next = prev + Math.random() * incrementBase;
                     if (next >= 100) {
                         setIsScanning(false);
                         setScanStatus('complete');
@@ -73,10 +104,16 @@ export default function AntivirusApp() {
                     }
                     return next;
                 });
-            }, 200);
+            }, speed);
         }
         return () => clearInterval(interval);
-    }, [isScanning, scanProgress]);
+    }, [isScanning, scanProgress, isBoostActive]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
 
     const startScan = () => {
         setScanProgress(0);
@@ -161,6 +198,34 @@ Response format: Simple markdown with headers.`,
                     >
                         Quarantine ({detectedThreats.filter(t => t.status === 'Quarantined').length})
                     </button>
+                    
+                    {/* Scan Boost Toggle */}
+                    <div className="flex items-center gap-4 ml-4 pl-4 border-l border-white/10">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[8px] text-slate-500 tracking-tighter">AI ENGINE SPEED</span>
+                            <span className={`text-[9px] font-black ${isBoostActive ? 'text-blue-400 animate-pulse' : 'text-slate-600'}`}>
+                                {isBoostActive ? 'HYPER-SCAN ACTIVE' : 'STANDARD MODE'}
+                            </span>
+                        </div>
+                        <button 
+                            onClick={toggleBoost}
+                            className={`relative w-12 h-6 rounded-full transition-colors duration-300 flex items-center p-1 ${isBoostActive ? 'bg-blue-600 shadow-[0_0_15px_#2563eb]' : 'bg-slate-800'}`}
+                        >
+                            <motion.div 
+                                animate={{ x: isBoostActive ? 24 : 0 }}
+                                className="w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-lg"
+                            >
+                                <Zap className={`w-2 h-2 ${isBoostActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                            </motion.div>
+                        </button>
+                        {isBoostActive && (
+                            <div className="bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded flex items-center gap-2 font-mono text-blue-400 text-[10px]">
+                                <Activity className="w-3 h-3 animate-spin duration-1000" />
+                                {formatTime(boostTimer)}
+                            </div>
+                        )}
+                    </div>
+
                     <a href="#" className="hover:text-white transition-colors">Protection</a>
                     <a href="#" className="hover:text-white transition-colors">Privacy</a>
                     <a href="#" className="hover:text-white transition-colors">Utilities</a>
@@ -213,19 +278,23 @@ Response format: Simple markdown with headers.`,
                                     disabled={isScanning}
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
-                                    className="relative group w-48 h-48 md:w-56 md:h-56 rounded-full bg-slate-900 border border-white/10 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(37,99,235,0.15)] hover:shadow-[0_0_80px_rgba(37,99,235,0.25)] transition-all z-20"
+                                    className={`relative group w-48 h-48 md:w-56 md:h-56 rounded-full bg-slate-900 border ${isBoostActive ? 'border-blue-500 shadow-[0_0_80px_rgba(37,99,235,0.4)]' : 'border-white/10 shadow-[0_0_50px_rgba(37,99,235,0.15)]'} flex flex-col items-center justify-center hover:shadow-[0_0_80px_rgba(37,99,235,0.25)] transition-all z-20`}
                                 >
                                     <div className="absolute inset-1 rounded-full bg-gradient-to-b from-blue-500/20 to-transparent"></div>
                                     {isScanning ? (
                                         <div className="space-y-4 flex flex-col items-center">
-                                            <Activity className="w-12 h-12 text-blue-500 animate-pulse" />
+                                            <Activity className={`w-12 h-12 ${isBoostActive ? 'text-blue-400' : 'text-blue-500'} animate-pulse`} />
                                             <span className="text-xl font-bold tracking-widest text-white">{Math.round(scanProgress)}%</span>
                                         </div>
                                     ) : (
                                         <>
-                                            <Search className="w-12 h-12 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
-                                            <span className="text-sm font-bold tracking-widest text-white">SCAN NOW</span>
-                                            <span className="text-[9px] text-slate-500 mt-1 uppercase font-bold">Quantum Core</span>
+                                            {isBoostActive ? (
+                                                <Zap className="w-12 h-12 text-blue-400 mb-2 animate-pulse" />
+                                            ) : (
+                                                <Search className="w-12 h-12 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
+                                            )}
+                                            <span className="text-sm font-bold tracking-widest text-white">{isBoostActive ? 'HYPER-SCAN' : 'SCAN NOW'}</span>
+                                            <span className="text-[9px] text-slate-500 mt-1 uppercase font-bold">{isBoostActive ? 'AI Boost Protocol' : 'Quantum Core'}</span>
                                         </>
                                     )}
                                 </motion.button>
