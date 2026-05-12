@@ -29,6 +29,7 @@ export default function AntivirusApp() {
     const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [dailyTip, setDailyTip] = useState<string | null>(null);
+    const [activeView, setActiveView] = useState<'dashboard' | 'quarantine'>('dashboard');
 
     const handleQuarantine = (id: string) => {
         setDetectedThreats(prev => prev.map(t => t.id === id ? { ...t, status: 'Quarantined' } : t));
@@ -148,7 +149,18 @@ Response format: Simple markdown with headers.`,
                 </div>
                 
                 <div className="hidden md:flex gap-8 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                    <a href="#" className="text-white border-b border-blue-500 pb-1">Dashboard</a>
+                    <button 
+                        onClick={() => setActiveView('dashboard')}
+                        className={`transition-colors ${activeView === 'dashboard' ? 'text-white border-b border-blue-500 pb-1' : 'hover:text-white'}`}
+                    >
+                        Dashboard
+                    </button>
+                    <button 
+                        onClick={() => setActiveView('quarantine')}
+                        className={`transition-colors ${activeView === 'quarantine' ? 'text-white border-b border-blue-500 pb-1' : 'hover:text-white'}`}
+                    >
+                        Quarantine ({detectedThreats.filter(t => t.status === 'Quarantined').length})
+                    </button>
                     <a href="#" className="hover:text-white transition-colors">Protection</a>
                     <a href="#" className="hover:text-white transition-colors">Privacy</a>
                     <a href="#" className="hover:text-white transition-colors">Utilities</a>
@@ -165,279 +177,371 @@ Response format: Simple markdown with headers.`,
                 </div>
             </nav>
 
-            <main className="flex-grow flex flex-col items-center justify-center relative z-10 px-6 md:px-10 py-12">
-                <div className="max-w-7xl w-full space-y-12">
-                    
-                    {/* Hero Section */}
-                    <div className="text-center space-y-6">
-                        <div className="inline-block px-4 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold tracking-widest uppercase mb-2 animate-pulse">
-                            Heuristic AI Engine Active
-                        </div>
-                        <h1 className="text-4xl md:text-7xl font-light text-white mb-2 tracking-tight">
-                            System is <span className="font-bold underline decoration-blue-500/50">Secure</span>
-                        </h1>
-                        <p className="text-slate-400 max-w-lg mx-auto">
-                            Last scan completed {scanStatus === 'complete' ? 'seconds' : '2 hours'} ago. {scanStatus === 'complete' ? '4 items identified for review.' : 'No critical threats detected.'}
-                        </p>
-                    </div>
+            <main className="flex-grow flex flex-col items-center justify-start relative z-10 px-6 md:px-10 py-12">
+                <div className="max-w-7xl w-full">
+                    {activeView === 'dashboard' ? (
+                        <div className="space-y-12 w-full">
+                            {/* Hero Section */}
+                            <div className="text-center space-y-6">
+                                <div className="inline-block px-4 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold tracking-widest uppercase mb-2 animate-pulse">
+                                    Heuristic AI Engine Active
+                                </div>
+                                <h1 className="text-4xl md:text-7xl font-light text-white mb-2 tracking-tight">
+                                    System is <span className="font-bold underline decoration-blue-500/50">Secure</span>
+                                </h1>
+                                <p className="text-slate-400 max-w-lg mx-auto">
+                                    Last scan completed {scanStatus === 'complete' ? 'seconds' : '2 hours'} ago. {scanStatus === 'complete' ? '4 items identified for review.' : 'No critical threats detected.'}
+                                </p>
+                            </div>
 
-                    {/* Central Scan Interaction */}
-                    <div className="relative flex items-center justify-center py-12">
-                        {/* Rings */}
-                        <div className="absolute w-[360px] h-[360px] md:w-[460px] md:h-[460px] rounded-full border border-white/5 flex items-center justify-center">
-                            <motion.div 
-                                className="absolute top-0 w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_#3b82f6]"
-                                animate={{ rotate: 360 }}
-                                transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
-                                style={{ transformOrigin: "center 180px" }}
-                            />
-                        </div>
-                        <div className="absolute w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-full border border-white/10" />
-                        
-                        {/* Interactive Main Button */}
-                        <motion.button 
-                            onClick={startScan}
-                            disabled={isScanning}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="relative group w-48 h-48 md:w-56 md:h-56 rounded-full bg-slate-900 border border-white/10 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(37,99,235,0.15)] hover:shadow-[0_0_80px_rgba(37,99,235,0.25)] transition-all z-20"
-                        >
-                            <div className="absolute inset-1 rounded-full bg-gradient-to-b from-blue-500/20 to-transparent"></div>
-                            {isScanning ? (
-                                <div className="space-y-4 flex flex-col items-center">
-                                    <Activity className="w-12 h-12 text-blue-500 animate-pulse" />
-                                    <span className="text-xl font-bold tracking-widest text-white">{Math.round(scanProgress)}%</span>
-                                </div>
-                            ) : (
-                                <>
-                                    <Search className="w-12 h-12 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
-                                    <span className="text-sm font-bold tracking-widest text-white">SCAN NOW</span>
-                                    <span className="text-[9px] text-slate-500 mt-1 uppercase font-bold">Quantum Core</span>
-                                </>
-                            )}
-                        </motion.button>
-                        
-                        {/* Progress Bar overlay for scanning */}
-                        {isScanning && (
-                            <div className="absolute bottom-[-40px] w-64 text-center space-y-2">
-                                <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-slate-500">
-                                    <span>Scanning Threads...</span>
-                                    <span>{Math.round(scanProgress)}%</span>
-                                </div>
-                                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                            {/* Central Scan Interaction */}
+                            <div className="relative flex items-center justify-center py-12">
+                                {/* Rings */}
+                                <div className="absolute w-[360px] h-[360px] md:w-[460px] md:h-[460px] rounded-full border border-white/5 flex items-center justify-center">
                                     <motion.div 
-                                        className="h-full bg-blue-500" 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${scanProgress}%` }}
+                                        className="absolute top-0 w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_#3b82f6]"
+                                        animate={{ rotate: 360 }}
+                                        transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+                                        style={{ transformOrigin: "center 180px" }}
                                     />
                                 </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full mt-16">
-                        {[
-                            { label: 'Web Shield', val: '1.4k Blocked', icon: Globe, color: 'text-blue-400', progress: 75 },
-                            { label: 'Firewall', val: 'Encrypted Port 443', icon: Network, color: 'text-emerald-400', sub: 'Active Connection' },
-                            { label: 'Data Vault', val: '2.4 GB Secured', icon: Database, color: 'text-orange-400', dots: 3 },
-                            { label: 'Performance', val: '98% Index', icon: Activity, color: 'text-purple-400', sub: 'Optimal State' },
-                        ].map((stat, i) => (
-                            <motion.div 
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="p-6 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/10 transition-all cursor-default"
-                            >
-                                <div className={`${stat.color} mb-3`}>
-                                    <stat.icon className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-white font-bold text-sm mb-1 uppercase tracking-tight">{stat.label}</h3>
-                                <p className="text-xs text-slate-400 font-medium mb-4">{stat.val}</p>
+                                <div className="absolute w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-full border border-white/10" />
                                 
-                                {stat.progress && (
-                                    <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-500" style={{ width: `${stat.progress}%` }}></div>
-                                    </div>
-                                )}
-                                {stat.sub && (
-                                    <p className={`text-[10px] font-bold uppercase tracking-widest ${stat.color} opacity-80 italic`}>{stat.sub}</p>
-                                )}
-                                {stat.dots && (
-                                    <div className="flex gap-1">
-                                        {[...Array(stat.dots)].map((_, j) => (
-                                            <div key={j} className="w-2 h-2 bg-orange-400 rounded-full shadow-[0_0_5px_rgba(251,146,60,0.5)]"></div>
-                                        ))}
-                                    </div>
-                                )}
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* Secondary Data Sections */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-12 items-start">
-                        {/* Threat Log Table */}
-                        <div className={`${selectedThreat ? 'lg:col-span-7' : 'lg:col-span-12'} transition-all duration-500`}>
-                            <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none overflow-hidden">
-                                <CardHeader className="border-b border-white/5 bg-white/5">
-                                    <div className="flex justify-between items-center">
-                                        <div>
-                                            <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Live Threat Intelligence</CardTitle>
-                                            <CardDescription className="text-[10px] text-slate-500 uppercase mt-1">Real-time heuristics analysis and classification</CardDescription>
-                                        </div>
-                                        <Badge variant="outline" className="text-red-400 border-red-500/20 bg-red-400/5 px-3 py-1 font-mono">{detectedThreats.length} ACTIVE ITEMS</Badge>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <ScrollArea className="h-[240px]">
-                                        <table className="w-full text-left text-[11px] border-collapse">
-                                            <thead className="sticky top-0 bg-[#020408] text-slate-500 uppercase font-black border-b border-white/5">
-                                                <tr>
-                                                    <th className="p-4 tracking-tighter">Diagnostic Entity</th>
-                                                    <th className="p-4 tracking-tighter">Classification</th>
-                                                    <th className="p-4 tracking-tighter">Severity Index</th>
-                                                    <th className="p-4 tracking-tighter text-right">Operation</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-white/5">
-                                                {detectedThreats.map((threat) => (
-                                                    <tr 
-                                                        key={threat.id} 
-                                                        onClick={() => analyzeThreat(threat)}
-                                                        className={`group cursor-pointer hover:bg-white/5 transition-colors ${selectedThreat?.id === threat.id ? 'bg-white/10' : ''}`}
-                                                    >
-                                                        <td className="p-4 font-bold text-white group-hover:text-blue-400 transition-colors uppercase tracking-tight">{threat.name}</td>
-                                                        <td className="p-4 text-slate-400 font-mono italic">{threat.type}</td>
-                                                        <td className="p-4">
-                                                            <div className={`inline-flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold ${
-                                                                threat.severity === 'Critical' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 
-                                                                threat.severity === 'High' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 
-                                                                'bg-slate-700/50 text-slate-400 border border-slate-600/30'
-                                                            }`}>
-                                                                <div className={`w-1 h-1 rounded-full ${
-                                                                    threat.severity === 'Critical' ? 'bg-red-400' : 
-                                                                    threat.severity === 'High' ? 'bg-orange-400' : 'bg-slate-400'
-                                                                }`} />
-                                                                {threat.severity}
-                                                            </div>
-                                                        </td>
-                                                        <td className="p-4 text-right">
-                                                            <span className="text-blue-500 font-bold group-hover:underline decoration-2 underline-offset-4 tracking-widest text-[10px] uppercase">Perform Deep Analysis</span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </ScrollArea>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Detailed Threat Information Section */}
-                        <AnimatePresence>
-                            {selectedThreat && (
-                                <motion.div 
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    className="lg:col-span-5 space-y-4"
+                                {/* Interactive Main Button */}
+                                <motion.button 
+                                    onClick={startScan}
+                                    disabled={isScanning}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="relative group w-48 h-48 md:w-56 md:h-56 rounded-full bg-slate-900 border border-white/10 flex flex-col items-center justify-center shadow-[0_0_50px_rgba(37,99,235,0.15)] hover:shadow-[0_0_80px_rgba(37,99,235,0.25)] transition-all z-20"
                                 >
-                                    <Card className="bg-slate-900 border border-blue-500/30 shadow-[0_0_40px_rgba(37,99,235,0.2)] rounded-none overflow-hidden">
-                                        <CardHeader className="bg-blue-600/20 border-b border-blue-500/20 p-4">
+                                    <div className="absolute inset-1 rounded-full bg-gradient-to-b from-blue-500/20 to-transparent"></div>
+                                    {isScanning ? (
+                                        <div className="space-y-4 flex flex-col items-center">
+                                            <Activity className="w-12 h-12 text-blue-500 animate-pulse" />
+                                            <span className="text-xl font-bold tracking-widest text-white">{Math.round(scanProgress)}%</span>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <Search className="w-12 h-12 text-blue-500 mb-2 group-hover:scale-110 transition-transform" />
+                                            <span className="text-sm font-bold tracking-widest text-white">SCAN NOW</span>
+                                            <span className="text-[9px] text-slate-500 mt-1 uppercase font-bold">Quantum Core</span>
+                                        </>
+                                    )}
+                                </motion.button>
+                                
+                                {/* Progress Bar overlay for scanning */}
+                                {isScanning && (
+                                    <div className="absolute bottom-[-40px] w-64 text-center space-y-2">
+                                        <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-slate-500">
+                                            <span>Scanning Threads...</span>
+                                            <span>{Math.round(scanProgress)}%</span>
+                                        </div>
+                                        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <motion.div 
+                                                className="h-full bg-blue-500" 
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${scanProgress}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full mt-16">
+                                {[
+                                    { label: 'Web Shield', val: '1.4k Blocked', icon: Globe, color: 'text-blue-400', progress: 75 },
+                                    { label: 'Firewall', val: 'Encrypted Port 443', icon: Network, color: 'text-emerald-400', sub: 'Active Connection' },
+                                    { label: 'Data Vault', val: '2.4 GB Secured', icon: Database, color: 'text-orange-400', dots: 3 },
+                                    { label: 'Performance', val: '98% Index', icon: Activity, color: 'text-purple-400', sub: 'Optimal State' },
+                                ].map((stat, i) => (
+                                    <motion.div 
+                                        key={i}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: i * 0.1 }}
+                                        className="p-6 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-white/10 transition-all cursor-default"
+                                    >
+                                        <div className={`${stat.color} mb-3`}>
+                                            <stat.icon className="w-6 h-6" />
+                                        </div>
+                                        <h3 className="text-white font-bold text-sm mb-1 uppercase tracking-tight">{stat.label}</h3>
+                                        <p className="text-xs text-slate-400 font-medium mb-4">{stat.val}</p>
+                                        
+                                        {stat.progress && (
+                                            <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                                                <div className="h-full bg-blue-500" style={{ width: `${stat.progress}%` }}></div>
+                                            </div>
+                                        )}
+                                        {stat.sub && (
+                                            <p className={`text-[10px] font-bold uppercase tracking-widest ${stat.color} opacity-80 italic`}>{stat.sub}</p>
+                                        )}
+                                        {stat.dots && (
+                                            <div className="flex gap-1">
+                                                {[...Array(stat.dots)].map((_, j) => (
+                                                    <div key={j} className="w-2 h-2 bg-orange-400 rounded-full shadow-[0_0_5px_rgba(251,146,60,0.5)]"></div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            {/* Secondary Data Sections */}
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-12 items-start">
+                                {/* Threat Log Table */}
+                                <div className={`${selectedThreat ? 'lg:col-span-7' : 'lg:col-span-12'} transition-all duration-500`}>
+                                    <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none overflow-hidden">
+                                        <CardHeader className="border-b border-white/5 bg-white/5">
                                             <div className="flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <AlertTriangle className="w-4 h-4 text-orange-400" />
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-white">Diagnostic Insights</span>
+                                                <div>
+                                                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Live Threat Intelligence</CardTitle>
+                                                    <CardDescription className="text-[10px] text-slate-500 uppercase mt-1">Real-time heuristics analysis and classification</CardDescription>
                                                 </div>
-                                                <button onClick={() => setSelectedThreat(null)} className="text-slate-500 hover:text-white">
-                                                    <Zap className="w-4 h-4" />
-                                                </button>
+                                                <Badge variant="outline" className="text-red-400 border-red-500/20 bg-red-400/5 px-3 py-1 font-mono">{detectedThreats.length} ACTIVE ITEMS</Badge>
                                             </div>
                                         </CardHeader>
-                                        <CardContent className="p-6 space-y-6">
-                                            {/* File Path & Detection Time */}
-                                            <div className="grid grid-cols-1 gap-4">
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] text-slate-500 uppercase font-black">Full File Path</span>
-                                                    <div className="text-[10px] font-mono text-blue-400 bg-black/40 p-2 border border-white/5 break-all">
-                                                        {selectedThreat.path}
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] text-slate-500 uppercase font-black">Detection Timestamp</span>
-                                                    <div className="text-[10px] font-mono text-emerald-400">
-                                                        {selectedThreat.detectedAt}
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[9px] text-slate-500 uppercase font-black">Current Status</span>
-                                                    <div className={`text-[10px] font-bold uppercase ${selectedThreat.status === 'Quarantined' ? 'text-blue-400 animate-pulse' : 'text-red-400'}`}>
-                                                        {selectedThreat.status}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <Separator className="bg-white/5" />
-
-                                            {/* Recommended Actions */}
-                                            <div className="space-y-3">
-                                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Recommended Mitigation Protocol</span>
-                                                <div className="space-y-2">
-                                                    {selectedThreat.recommendations.map((rec, i) => (
-                                                        <div key={i} className="flex items-center gap-3 text-[11px] text-slate-300 bg-white/5 p-2 border-l-2 border-emerald-500">
-                                                            <div className="w-1 h-1 bg-emerald-500 rounded-full" />
-                                                            {rec}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            <Separator className="bg-white/5" />
-
-                                            {/* AI Deep Analysis Result */}
-                                            <div className="space-y-3">
-                                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-2">
-                                                    <Search className="w-3 h-3 text-blue-400" />
-                                                    Neural Signature Analysis
-                                                </span>
-                                                {isAnalyzing ? (
-                                                    <div className="py-8 flex flex-col items-center gap-3 animate-pulse">
-                                                        <Activity className="w-6 h-6 text-blue-500" />
-                                                        <span className="text-[9px] text-slate-600 uppercase">Parsing Global signatures...</span>
-                                                    </div>
-                                                ) : (
-                                                    <ScrollArea className="h-40">
-                                                        <div className="text-[11px] leading-relaxed text-slate-400 font-sans italic p-2 bg-black/20">
-                                                            {aiAnalysis || "Select 'Perform Deep Analysis' to generate AI forensic report."}
-                                                        </div>
-                                                    </ScrollArea>
-                                                )}
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-3 pt-4">
-                                                <Button 
-                                                    size="sm" 
-                                                    onClick={() => handleQuarantine(selectedThreat.id)}
-                                                    disabled={selectedThreat.status === 'Quarantined'}
-                                                    className="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] uppercase font-bold tracking-widest disabled:opacity-50"
-                                                >
-                                                    {selectedThreat.status === 'Quarantined' ? 'Quarantined' : 'Quarantine'}
-                                                </Button>
-                                                <Button 
-                                                    size="sm" 
-                                                    onClick={() => handlePurge(selectedThreat.id)}
-                                                    className="bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold tracking-widest border-b-2 border-red-900"
-                                                >
-                                                    Purge Entity
-                                                </Button>
-                                            </div>
+                                        <CardContent className="p-0">
+                                            <ScrollArea className="h-[240px]">
+                                                <table className="w-full text-left text-[11px] border-collapse">
+                                                    <thead className="sticky top-0 bg-[#020408] text-slate-500 uppercase font-black border-b border-white/5">
+                                                        <tr>
+                                                            <th className="p-4 tracking-tighter">Diagnostic Entity</th>
+                                                            <th className="p-4 tracking-tighter">Classification</th>
+                                                            <th className="p-4 tracking-tighter">Severity Index</th>
+                                                            <th className="p-4 tracking-tighter text-right">Operation</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-white/5">
+                                                        {detectedThreats.map((threat) => (
+                                                            <tr 
+                                                                key={threat.id} 
+                                                                onClick={() => analyzeThreat(threat)}
+                                                                className={`group cursor-pointer hover:bg-white/5 transition-colors ${selectedThreat?.id === threat.id ? 'bg-white/10' : ''}`}
+                                                            >
+                                                                <td className="p-4 font-bold text-white group-hover:text-blue-400 transition-colors uppercase tracking-tight">{threat.name}</td>
+                                                                <td className="p-4 text-slate-400 font-mono italic">{threat.type}</td>
+                                                                <td className="p-4">
+                                                                    <div className={`inline-flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                                        threat.severity === 'Critical' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 
+                                                                        threat.severity === 'High' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 
+                                                                        'bg-slate-700/50 text-slate-400 border border-slate-600/30'
+                                                                    }`}>
+                                                                        <div className={`w-1 h-1 rounded-full ${
+                                                                            threat.severity === 'Critical' ? 'bg-red-400' : 
+                                                                            threat.severity === 'High' ? 'bg-orange-400' : 'bg-slate-400'
+                                                                        }`} />
+                                                                        {threat.severity}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-4 text-right">
+                                                                    <span className="text-blue-500 font-bold group-hover:underline decoration-2 underline-offset-4 tracking-widest text-[10px] uppercase">Perform Deep Analysis</span>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </ScrollArea>
                                         </CardContent>
                                     </Card>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
+                                </div>
+
+                                {/* Detailed Threat Information Section */}
+                                <AnimatePresence>
+                                    {selectedThreat && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 20 }}
+                                            className="lg:col-span-5 space-y-4"
+                                        >
+                                            <Card className="bg-slate-900 border border-blue-500/30 shadow-[0_0_40px_rgba(37,99,235,0.2)] rounded-none overflow-hidden">
+                                                <CardHeader className="bg-blue-600/20 border-b border-blue-500/20 p-4">
+                                                    <div className="flex justify-between items-center">
+                                                        <div className="flex items-center gap-2">
+                                                            <AlertTriangle className="w-4 h-4 text-orange-400" />
+                                                            <span className="text-[10px] font-bold uppercase tracking-widest text-white">Diagnostic Insights</span>
+                                                        </div>
+                                                        <button onClick={() => setSelectedThreat(null)} className="text-slate-500 hover:text-white">
+                                                            <Zap className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </CardHeader>
+                                                <CardContent className="p-6 space-y-6">
+                                                    {/* File Path & Detection Time */}
+                                                    <div className="grid grid-cols-1 gap-4">
+                                                        <div className="space-y-1">
+                                                            <span className="text-[9px] text-slate-500 uppercase font-black">Full File Path</span>
+                                                            <div className="text-[10px] font-mono text-blue-400 bg-black/40 p-2 border border-white/5 break-all">
+                                                                {selectedThreat.path}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <span className="text-[9px] text-slate-500 uppercase font-black">Detection Timestamp</span>
+                                                            <div className="text-[10px] font-mono text-emerald-400">
+                                                                {selectedThreat.detectedAt}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1">
+                                                            <span className="text-[9px] text-slate-500 uppercase font-black">Current Status</span>
+                                                            <div className={`text-[10px] font-bold uppercase ${selectedThreat.status === 'Quarantined' ? 'text-blue-400 animate-pulse' : 'text-red-400'}`}>
+                                                                {selectedThreat.status}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <Separator className="bg-white/5" />
+
+                                                    {/* Recommended Actions */}
+                                                    <div className="space-y-3">
+                                                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Recommended Mitigation Protocol</span>
+                                                        <div className="space-y-2">
+                                                            {selectedThreat.recommendations.map((rec, i) => (
+                                                                <div key={i} className="flex items-center gap-3 text-[11px] text-slate-300 bg-white/5 p-2 border-l-2 border-emerald-500">
+                                                                    <div className="w-1 h-1 bg-emerald-500 rounded-full" />
+                                                                    {rec}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    <Separator className="bg-white/5" />
+
+                                                    {/* AI Deep Analysis Result */}
+                                                    <div className="space-y-3">
+                                                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-2">
+                                                            <Search className="w-3 h-3 text-blue-400" />
+                                                            Neural Signature Analysis
+                                                        </span>
+                                                        {isAnalyzing ? (
+                                                            <div className="py-8 flex flex-col items-center gap-3 animate-pulse">
+                                                                <Activity className="w-6 h-6 text-blue-500" />
+                                                                <span className="text-[9px] text-slate-600 uppercase">Parsing Global signatures...</span>
+                                                            </div>
+                                                        ) : (
+                                                            <ScrollArea className="h-40">
+                                                                <div className="text-[11px] leading-relaxed text-slate-400 font-sans italic p-2 bg-black/20">
+                                                                    {aiAnalysis || "Select 'Perform Deep Analysis' to generate AI forensic report."}
+                                                                </div>
+                                                            </ScrollArea>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-3 pt-4">
+                                                        <Button 
+                                                            size="sm" 
+                                                            onClick={() => handleQuarantine(selectedThreat.id)}
+                                                            disabled={selectedThreat.status === 'Quarantined'}
+                                                            className="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] uppercase font-bold tracking-widest disabled:opacity-50"
+                                                        >
+                                                            {selectedThreat.status === 'Quarantined' ? 'Quarantined' : 'Quarantine'}
+                                                        </Button>
+                                                        <Button 
+                                                            size="sm" 
+                                                            onClick={() => handlePurge(selectedThreat.id)}
+                                                            className="bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold tracking-widest border-b-2 border-red-900"
+                                                        >
+                                                            Purge Entity
+                                                        </Button>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-8 w-full">
+                            {/* Quarantine View */}
+                            <div className="flex justify-between items-end">
+                                <div className="space-y-2">
+                                    <div className="inline-block px-3 py-1 rounded bg-blue-500/10 text-blue-400 text-[10px] font-bold tracking-widest uppercase border border-blue-500/20">
+                                        Secure Isolation Chamber
+                                    </div>
+                                    <h1 className="text-4xl font-bold text-white tracking-tight uppercase italic">Quarantined <span className="text-blue-500 not-italic underline underline-offset-4 decoration-2">Nodes</span></h1>
+                                    <p className="text-slate-400 text-sm max-w-md">The following entities are encrypted and isolated within the SENTINEL sandbox. They cannot interact with the host system.</p>
+                                </div>
+                                <Button 
+                                    onClick={() => setActiveView('dashboard')}
+                                    variant="outline" 
+                                    className="border-white/10 text-white hover:bg-white/5 uppercase text-xs font-bold tracking-widest"
+                                >
+                                    Back to Dashboard
+                                </Button>
+                            </div>
+
+                            <Separator className="bg-white/5" />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {detectedThreats.filter(t => t.status === 'Quarantined').length > 0 ? (
+                                    detectedThreats.filter(t => t.status === 'Quarantined').map((threat) => (
+                                        <Card key={threat.id} className="bg-white/5 border-blue-500/30 rounded-none overflow-hidden hover:bg-white/10 transition-colors">
+                                            <CardHeader className="bg-blue-600/10 border-b border-blue-500/20 p-4">
+                                                <CardTitle className="text-sm font-bold text-white uppercase flex items-center justify-between">
+                                                    {threat.name}
+                                                    <ShieldAlert className="w-4 h-4 text-blue-400" />
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="p-6 space-y-4">
+                                                <div className="space-y-1">
+                                                    <span className="text-[9px] text-slate-500 uppercase font-black">Original Source</span>
+                                                    <div className="text-[10px] font-mono text-slate-300 break-all bg-black/30 p-2 rounded">
+                                                        {threat.path}
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between items-center text-[10px]">
+                                                    <span className="text-slate-500 uppercase font-black">Isolated Since</span>
+                                                    <span className="text-emerald-400 font-mono">{threat.detectedAt}</span>
+                                                </div>
+                                                <Separator className="bg-white/5" />
+                                                <div className="space-y-2">
+                                                    <span className="text-[9px] text-slate-500 uppercase font-black">Mitigation Advisory</span>
+                                                    <div className="space-y-1">
+                                                        {threat.recommendations.map((rec, idx) => (
+                                                            <div key={idx} className="text-[10px] text-slate-400 flex items-start gap-2">
+                                                                <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 shrink-0" />
+                                                                {rec}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="pt-4 flex gap-2">
+                                                    <Button 
+                                                        size="sm" 
+                                                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] uppercase tracking-widest h-8"
+                                                        onClick={() => {
+                                                            setDetectedThreats(prev => prev.map(t => t.id === threat.id ? { ...t, status: 'Blocked' } : t));
+                                                        }}
+                                                    >
+                                                        Restore (Securely)
+                                                    </Button>
+                                                    <Button 
+                                                        size="sm" 
+                                                        className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold text-[10px] uppercase tracking-widest h-8"
+                                                        onClick={() => handlePurge(threat.id)}
+                                                    >
+                                                        Erase Entity
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))
+                                ) : (
+                                    <div className="col-span-full py-20 flex flex-col items-center justify-center text-center space-y-4 border-2 border-dashed border-white/5">
+                                        <div className="p-6 bg-white/5 rounded-full">
+                                            <ShieldCheck className="w-12 h-12 text-slate-700" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-slate-500 uppercase tracking-widest">Vault Empty</h3>
+                                            <p className="text-xs text-slate-600 max-w-[240px] mt-1 italic">No entities are currently held in the isolation chamber.</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
 
