@@ -13,10 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getGemini } from '@/lib/gemini';
 
 const THREAT_EXAMPLES = [
-    { id: '1', name: 'Trojan.Win32.Generic', type: 'Trojan', severity: 'High', status: 'Blocked', path: 'C:/Users/Downloads/patch.exe' },
-    { id: '2', name: 'Adware.Browser.Helper', type: 'Adware', severity: 'Low', status: 'Quarantined', path: 'AppData/Local/Temp/gh_installer.msi' },
-    { id: '3', name: 'Ransom.Encrypter.X', type: 'Ransomware', severity: 'Critical', status: 'Infected', path: 'D:/Work/Backup/old_files.zip' },
-    { id: '4', name: 'Spyware.KeyLogger.Pro', type: 'Spyware', severity: 'High', status: 'Blocked', path: 'System32/drivers/keyboard_drv.sys' },
+    { id: '1', name: 'Trojan.Win32.Generic', type: 'Trojan', severity: 'High', status: 'Blocked', path: 'C:/Users/Downloads/patch.exe', detectedAt: '2026-05-12 04:12:01', recommendations: ['Terminate process immediately', 'Perform full system backup', 'Enable real-time kernel protection'] },
+    { id: '2', name: 'Adware.Browser.Helper', type: 'Adware', severity: 'Low', status: 'Quarantined', path: 'AppData/Local/Temp/gh_installer.msi', detectedAt: '2026-05-11 22:45:12', recommendations: ['Clear browser cache', 'Reset browser settings', 'Scan for secondary extensions'] },
+    { id: '3', name: 'Ransom.Encrypter.X', type: 'Ransomware', severity: 'Critical', status: 'Infected', path: 'D:/Work/Backup/old_files.zip', detectedAt: '2026-05-12 05:30:45', recommendations: ['Disconnect from network', 'Boot into safe mode', 'Notify local system administrator'] },
+    { id: '4', name: 'Spyware.KeyLogger.Pro', type: 'Spyware', severity: 'High', status: 'Blocked', path: 'System32/drivers/keyboard_drv.sys', detectedAt: '2026-05-10 14:20:00', recommendations: ['Update keyboard drivers', 'Run deep rootkit scan', 'Change sensitive passwords'] },
 ];
 
 export default function AntivirusApp() {
@@ -237,9 +237,9 @@ export default function AntivirusApp() {
                     </div>
 
                     {/* Secondary Data Sections */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-12 items-start">
                         {/* Threat Log Table */}
-                        <div className="lg:col-span-12">
+                        <div className={`${selectedThreat ? 'lg:col-span-7' : 'lg:col-span-12'} transition-all duration-500`}>
                             <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none overflow-hidden">
                                 <CardHeader className="border-b border-white/5 bg-white/5">
                                     <div className="flex justify-between items-center">
@@ -294,62 +294,92 @@ export default function AntivirusApp() {
                                 </CardContent>
                             </Card>
                         </div>
-                    </div>
 
-                    {/* AI Insight Overlay */}
-                    {selectedThreat && (
+                        {/* Detailed Threat Information Section */}
                         <AnimatePresence>
-                            <motion.div 
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="fixed inset-x-6 bottom-20 md:bottom-24 md:inset-x-auto md:right-10 md:w-96 z-50 pointer-events-auto"
-                            >
-                                <Card className="bg-slate-900 border border-blue-500/30 shadow-[0_0_40px_rgba(37,99,235,0.2)] rounded-2xl overflow-hidden">
-                                    <div className="bg-blue-600/20 border-b border-blue-500/20 p-4 flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                            <Search className="w-4 h-4 text-blue-400" />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-300 italic">AI Threat Forensics</span>
-                                        </div>
-                                        <button onClick={() => setSelectedThreat(null)} className="text-slate-500 hover:text-white transition-colors">
-                                            <Zap className="w-4 h-4 rotate-180" />
-                                        </button>
-                                    </div>
-                                    <CardContent className="p-6">
-                                        <div className="mb-4">
-                                            <div className="text-[9px] text-slate-500 uppercase font-black mb-1">Target Endpoint</div>
-                                            <div className="text-[10px] font-mono text-slate-300 break-all bg-black/30 p-2 border border-white/5">{selectedThreat.path}</div>
-                                        </div>
-                                        
-                                        {isAnalyzing ? (
-                                            <div className="py-12 flex flex-col items-center gap-4 text-center">
-                                                <div className="relative">
-                                                    <motion.div 
-                                                        animate={{ rotate: 360 }}
-                                                        transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                                                        className="w-12 h-12 border-2 border-blue-500/20 border-t-blue-500 rounded-full"
-                                                    />
-                                                    <Shield className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
+                            {selectedThreat && (
+                                <motion.div 
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    className="lg:col-span-5 space-y-4"
+                                >
+                                    <Card className="bg-slate-900 border border-blue-500/30 shadow-[0_0_40px_rgba(37,99,235,0.2)] rounded-none overflow-hidden">
+                                        <CardHeader className="bg-blue-600/20 border-b border-blue-500/20 p-4">
+                                            <div className="flex justify-between items-center">
+                                                <div className="flex items-center gap-2">
+                                                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-white">Diagnostic Insights</span>
                                                 </div>
-                                                <p className="text-[10px] uppercase tracking-widest text-slate-500 italic animate-pulse">Running Neural Pattern Recognition...</p>
+                                                <button onClick={() => setSelectedThreat(null)} className="text-slate-500 hover:text-white">
+                                                    <Zap className="w-4 h-4" />
+                                                </button>
                                             </div>
-                                        ) : (
-                                            <ScrollArea className="h-48">
-                                                <div className="prose prose-invert prose-xs leading-relaxed text-slate-300 whitespace-pre-wrap font-sans">
-                                                    {aiAnalysis}
+                                        </CardHeader>
+                                        <CardContent className="p-6 space-y-6">
+                                            {/* File Path & Detection Time */}
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <div className="space-y-1">
+                                                    <span className="text-[9px] text-slate-500 uppercase font-black">Full File Path</span>
+                                                    <div className="text-[10px] font-mono text-blue-400 bg-black/40 p-2 border border-white/5 break-all">
+                                                        {selectedThreat.path}
+                                                    </div>
                                                 </div>
-                                            </ScrollArea>
-                                        )}
-                                        
-                                        <div className="mt-6 pt-4 border-t border-white/5">
-                                            <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-10 tracking-widest text-xs rounded-lg uppercase shadow-lg shadow-blue-900/40">
-                                                Quarantine Signature
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
+                                                <div className="space-y-1">
+                                                    <span className="text-[9px] text-slate-500 uppercase font-black">Detection Timestamp</span>
+                                                    <div className="text-[10px] font-mono text-emerald-400">
+                                                        {selectedThreat.detectedAt}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <Separator className="bg-white/5" />
+
+                                            {/* Recommended Actions */}
+                                            <div className="space-y-3">
+                                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Recommended Mitigation Protocol</span>
+                                                <div className="space-y-2">
+                                                    {selectedThreat.recommendations.map((rec, i) => (
+                                                        <div key={i} className="flex items-center gap-3 text-[11px] text-slate-300 bg-white/5 p-2 border-l-2 border-emerald-500">
+                                                            <div className="w-1 h-1 bg-emerald-500 rounded-full" />
+                                                            {rec}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <Separator className="bg-white/5" />
+
+                                            {/* AI Deep Analysis Result */}
+                                            <div className="space-y-3">
+                                                <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-2">
+                                                    <Search className="w-3 h-3 text-blue-400" />
+                                                    Neural Signature Analysis
+                                                </span>
+                                                {isAnalyzing ? (
+                                                    <div className="py-8 flex flex-col items-center gap-3 animate-pulse">
+                                                        <Activity className="w-6 h-6 text-blue-500" />
+                                                        <span className="text-[9px] text-slate-600 uppercase">Parsing Global signatures...</span>
+                                                    </div>
+                                                ) : (
+                                                    <ScrollArea className="h-40">
+                                                        <div className="text-[11px] leading-relaxed text-slate-400 font-sans italic p-2 bg-black/20">
+                                                            {aiAnalysis || "Select 'Perform Deep Analysis' to generate AI forensic report."}
+                                                        </div>
+                                                    </ScrollArea>
+                                                )}
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 pt-4">
+                                                <Button size="sm" className="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] uppercase font-bold tracking-widest">Quarantine</Button>
+                                                <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold tracking-widest border-b-2 border-red-900">Purge Entity</Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
+                            )}
                         </AnimatePresence>
-                    )}
+                    </div>
                 </div>
             </main>
 
