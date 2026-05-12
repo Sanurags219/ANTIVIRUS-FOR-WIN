@@ -29,9 +29,13 @@ export default function AntivirusApp() {
     const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [dailyTip, setDailyTip] = useState<string | null>(null);
-    const [activeView, setActiveView] = useState<'dashboard' | 'quarantine'>('dashboard');
+    const [activeView, setActiveView] = useState<'dashboard' | 'quarantine' | 'history'>('dashboard');
     const [isBoostActive, setIsBoostActive] = useState(false);
     const [boostTimer, setBoostTimer] = useState(0);
+    const [scanHistory, setScanHistory] = useState([
+        { id: 'h1', date: '2026-05-11', time: '14:30:22', status: 'Clean', threatsFound: 0 },
+        { id: 'h2', date: '2026-05-10', time: '09:12:45', status: 'Threats Detected', threatsFound: 2 },
+    ]);
 
     const toggleBoost = () => {
         if (!isBoostActive) {
@@ -100,6 +104,19 @@ export default function AntivirusApp() {
                     if (next >= 100) {
                         setIsScanning(false);
                         setScanStatus('complete');
+                        
+                        // Log to history
+                        setScanHistory(prev => [
+                            {
+                                id: Math.random().toString(36).substring(2, 9),
+                                date: new Date().toISOString().split('T')[0],
+                                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+                                status: detectedThreats.length > 0 ? 'Threats Detected' : 'Clean',
+                                threatsFound: detectedThreats.length
+                            },
+                            ...prev
+                        ]);
+
                         return 100;
                     }
                     return next;
@@ -197,6 +214,12 @@ Response format: Simple markdown with headers.`,
                         className={`transition-colors ${activeView === 'quarantine' ? 'text-white border-b border-blue-500 pb-1' : 'hover:text-white'}`}
                     >
                         Quarantine ({detectedThreats.filter(t => t.status === 'Quarantined').length})
+                    </button>
+                    <button 
+                        onClick={() => setActiveView('history')}
+                        className={`transition-colors ${activeView === 'history' ? 'text-white border-b border-blue-500 pb-1' : 'hover:text-white'}`}
+                    >
+                        History
                     </button>
                     
                     {/* Scan Boost Toggle */}
@@ -521,7 +544,7 @@ Response format: Simple markdown with headers.`,
                                 </AnimatePresence>
                             </div>
                         </div>
-                    ) : (
+                    ) : activeView === 'quarantine' ? (
                         <div className="space-y-8 w-full">
                             {/* Quarantine View */}
                             <div className="flex justify-between items-end">
@@ -609,6 +632,82 @@ Response format: Simple markdown with headers.`,
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-8 w-full">
+                            {/* History View */}
+                            <div className="flex justify-between items-end">
+                                <div className="space-y-2">
+                                    <div className="inline-block px-3 py-1 rounded bg-purple-500/10 text-purple-400 text-[10px] font-bold tracking-widest uppercase border border-purple-500/20">
+                                        SENTINEL LOGS
+                                    </div>
+                                    <h1 className="text-4xl font-bold text-white tracking-tight uppercase italic">Scan <span className="text-purple-500 not-italic underline underline-offset-4 decoration-2">History</span></h1>
+                                    <p className="text-slate-400 text-sm max-w-md">Comprehensive audit trail of system scans and diagnostic operations performed by the Sentinel Core engine.</p>
+                                </div>
+                                <Button 
+                                    onClick={() => setActiveView('dashboard')}
+                                    variant="outline" 
+                                    className="border-white/10 text-white hover:bg-white/5 uppercase text-xs font-bold tracking-widest"
+                                >
+                                    Back to Dashboard
+                                </Button>
+                            </div>
+
+                            <Separator className="bg-white/5" />
+
+                            <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none overflow-hidden">
+                                <CardHeader className="border-b border-white/5 bg-white/5">
+                                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Execution Logs</CardTitle>
+                                    <CardDescription className="text-[10px] text-slate-500 uppercase mt-1">Audit trail of automated and manual scan cycles</CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <ScrollArea className="h-[400px]">
+                                        <table className="w-full text-left text-[11px] border-collapse">
+                                            <thead className="sticky top-0 bg-[#020408] text-slate-500 uppercase font-black border-b border-white/5">
+                                                <tr>
+                                                    <th className="p-4 tracking-tighter">Scan Date</th>
+                                                    <th className="p-4 tracking-tighter">Timestamp</th>
+                                                    <th className="p-4 tracking-tighter">Status</th>
+                                                    <th className="p-4 tracking-tighter">Summary</th>
+                                                    <th className="p-4 tracking-tighter text-right">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/5">
+                                                {scanHistory.map((log) => (
+                                                    <tr key={log.id} className="hover:bg-white/5 transition-colors group">
+                                                        <td className="p-4 font-mono text-slate-300">{log.date}</td>
+                                                        <td className="p-4 font-mono text-slate-400">{log.time}</td>
+                                                        <td className="p-4">
+                                                            <div className={`inline-flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                                log.status === 'Clean' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
+                                                                'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                            }`}>
+                                                                {log.status === 'Clean' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                                                                {log.status}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-4 text-slate-400 italic">
+                                                            {log.threatsFound > 0 ? (
+                                                                <span className="text-red-400/80 font-bold">{log.threatsFound} items flagged for review</span>
+                                                            ) : (
+                                                                "No security anomalies detected"
+                                                            )}
+                                                        </td>
+                                                        <td className="p-4 text-right">
+                                                            <button className="text-[10px] uppercase font-black text-blue-500 hover:underline underline-offset-4 opacity-50 group-hover:opacity-100 transition-opacity">View Details</button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                        {scanHistory.length === 0 && (
+                                            <div className="py-20 flex flex-col items-center justify-center text-slate-600 italic">
+                                                No scan history available
+                                            </div>
+                                        )}
+                                    </ScrollArea>
+                                </CardContent>
+                            </Card>
                         </div>
                     )}
                 </div>
