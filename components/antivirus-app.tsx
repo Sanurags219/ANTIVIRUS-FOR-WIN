@@ -75,11 +75,37 @@ export default function AntivirusApp() {
     const analyzeThreat = async (threat: typeof THREAT_EXAMPLES[0]) => {
         setSelectedThreat(threat);
         setIsAnalyzing(true);
+        
+        // Capture basic system info if available
+        let systemConfigStr = "No specific system configuration available (analysis based on general threat intelligence).";
+        
+        if (typeof window !== 'undefined') {
+            const os = navigator.userAgent;
+            const cores = navigator.hardwareConcurrency;
+            const memory = (navigator as any).deviceMemory;
+            
+            if (os) {
+                systemConfigStr = `System OS: ${os} | Hardware Cores: ${cores || 'Unknown'} | Memory Class: ${memory ? memory + 'GB' : 'Unknown'}`;
+            }
+        }
+
         try {
             const ai = getGemini();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Explain this antivirus threat: ${threat.name}. Type: ${threat.type}. Severity: ${threat.severity}. Path: ${threat.path}. Give a brief explanation and 3 steps to mitigate or prevent similar issues. Response format: Simple markdown with headers.`,
+                contents: `Explain this antivirus threat: ${threat.name}. 
+Type: ${threat.type}. 
+Severity: ${threat.severity}. 
+Path: ${threat.path}.
+
+USER SYSTEM CONTEXT: ${systemConfigStr}
+
+Instructions:
+1. Provide a brief technical explanation of the threat.
+2. Provide 3 specific steps to mitigate or prevent similar issues, tailored to the user's system context if it was provided (e.g. OS specific paths or tools).
+3. If the "User System Context" indicates no configuration was available, explicitly state at the beginning of your response: "This analysis is based on general threat intelligence."
+
+Response format: Simple markdown with headers.`,
             });
             setAiAnalysis(response.text || "No analysis available.");
         } catch (error) {
