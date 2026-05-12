@@ -30,6 +30,19 @@ export default function AntivirusApp() {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [dailyTip, setDailyTip] = useState<string | null>(null);
 
+    const handleQuarantine = (id: string) => {
+        setDetectedThreats(prev => prev.map(t => t.id === id ? { ...t, status: 'Quarantined' } : t));
+        if (selectedThreat && selectedThreat.id === id) {
+            setSelectedThreat(prev => prev ? { ...prev, status: 'Quarantined' } : null);
+        }
+    };
+
+    const handlePurge = (id: string) => {
+        setDetectedThreats(prev => prev.filter(t => t.id !== id));
+        setSelectedThreat(null);
+        setSecurityScore(prev => Math.min(100, prev + 2));
+    };
+
     useEffect(() => {
         const fetchTip = async () => {
             try {
@@ -357,6 +370,12 @@ Response format: Simple markdown with headers.`,
                                                         {selectedThreat.detectedAt}
                                                     </div>
                                                 </div>
+                                                <div className="space-y-1">
+                                                    <span className="text-[9px] text-slate-500 uppercase font-black">Current Status</span>
+                                                    <div className={`text-[10px] font-bold uppercase ${selectedThreat.status === 'Quarantined' ? 'text-blue-400 animate-pulse' : 'text-red-400'}`}>
+                                                        {selectedThreat.status}
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <Separator className="bg-white/5" />
@@ -397,8 +416,21 @@ Response format: Simple markdown with headers.`,
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-3 pt-4">
-                                                <Button size="sm" className="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] uppercase font-bold tracking-widest">Quarantine</Button>
-                                                <Button size="sm" className="bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold tracking-widest border-b-2 border-red-900">Purge Entity</Button>
+                                                <Button 
+                                                    size="sm" 
+                                                    onClick={() => handleQuarantine(selectedThreat.id)}
+                                                    disabled={selectedThreat.status === 'Quarantined'}
+                                                    className="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] uppercase font-bold tracking-widest disabled:opacity-50"
+                                                >
+                                                    {selectedThreat.status === 'Quarantined' ? 'Quarantined' : 'Quarantine'}
+                                                </Button>
+                                                <Button 
+                                                    size="sm" 
+                                                    onClick={() => handlePurge(selectedThreat.id)}
+                                                    className="bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold tracking-widest border-b-2 border-red-900"
+                                                >
+                                                    Purge Entity
+                                                </Button>
                                             </div>
                                         </CardContent>
                                     </Card>
