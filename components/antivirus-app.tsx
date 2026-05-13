@@ -40,8 +40,61 @@ export default function AntivirusApp() {
         scanDepth: 'Deep',
         sensitivity: 'High',
         autoQuarantine: false,
-        schedule: 'None'
+        schedule: 'None',
+        realTimeProtection: true
     });
+    const [notification, setNotification] = useState<{ id: string, message: string, type: 'threat' | 'info' } | null>(null);
+
+    useEffect(() => {
+        if (notification) {
+            const timer = setTimeout(() => {
+                setNotification(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [notification]);
+
+    // Real-time protection simulation
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (scanSettings.realTimeProtection) {
+            interval = setInterval(() => {
+                // Low probability of finding a threat in real-time (random simulation)
+                if (Math.random() < 0.05) {
+                    const newThreat = {
+                        id: Math.random().toString(36).substring(2, 9),
+                        name: 'Suspicious.Pattern.' + Math.random().toString(36).substring(2, 5).toUpperCase(),
+                        type: ['Trojan', 'Adware', 'Spyware'][Math.floor(Math.random() * 3)],
+                        severity: 'High',
+                        status: scanSettings.autoQuarantine ? 'Quarantined' : 'Blocked',
+                        path: 'RealTime/Monitor/' + Math.random().toString(36).substring(2, 10).toUpperCase() + '.tmp',
+                        detectedAt: new Date().toISOString().replace('T', ' ').split('.')[0],
+                        recommendations: ['Check parent process', 'Review network activity', 'Run full system scan']
+                    };
+                    
+                    setDetectedThreats(prev => [newThreat, ...prev]);
+                    setNotification({
+                        id: newThreat.id,
+                        message: `Real-time Threat Detected: ${newThreat.name}`,
+                        type: 'threat'
+                    });
+                    
+                    // Also log to history
+                    setScanHistory(prev => [
+                        {
+                            id: 'rt-' + Math.random().toString(36).substring(2, 7),
+                            date: new Date().toISOString().split('T')[0],
+                            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+                            status: 'Real-time Threat Neutralized',
+                            threatsFound: 1
+                        },
+                        ...prev
+                    ]);
+                }
+            }, 15000); // Check every 15 seconds
+        }
+        return () => clearInterval(interval);
+    }, [scanSettings.realTimeProtection, scanSettings.autoQuarantine]);
 
     const toggleBoost = () => {
         if (!isBoostActive) {
@@ -197,6 +250,38 @@ Response format: Simple markdown with headers.`,
 
     return (
         <div className="min-h-screen bg-[#020408] text-slate-200 font-sans relative overflow-hidden flex flex-col">
+            {/* Real-time Notification Overlay */}
+            <AnimatePresence>
+                {notification && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 50, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: 20, x: '-50%' }}
+                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-full max-w-md px-4"
+                    >
+                        <div className={`p-4 rounded-xl border ${notification.type === 'threat' ? 'bg-red-950/90 border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)]' : 'bg-blue-950/90 border-blue-500 shadow-[0_0_30px_rgba(59,130,246,0.3)]'} backdrop-blur-xl flex items-center justify-between`}>
+                            <div className="flex items-center gap-3">
+                                {notification.type === 'threat' ? (
+                                    <AlertTriangle className="w-6 h-6 text-red-500 animate-pulse" />
+                                ) : (
+                                    <ShieldCheck className="w-6 h-6 text-blue-500" />
+                                )}
+                                <div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Security Alert</div>
+                                    <div className="text-sm font-bold text-white">{notification.message}</div>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setNotification(null)}
+                                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                            >
+                                <Zap className="w-4 h-4 text-slate-500" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Background Atmospheric Glows */}
             <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/20 rounded-full blur-[120px] pointer-events-none"></div>
             <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-emerald-900/10 rounded-full blur-[100px] pointer-events-none"></div>
@@ -289,8 +374,13 @@ Response format: Simple markdown with headers.`,
                         <div className="space-y-12 w-full">
                             {/* Hero Section */}
                             <div className="text-center space-y-6">
-                                <div className="inline-block px-4 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold tracking-widest uppercase mb-2 animate-pulse">
-                                    Heuristic AI Engine Active
+                                <div className="flex justify-center gap-3 mb-2">
+                                    <div className={`px-4 py-1 rounded-full border ${scanSettings.realTimeProtection ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-red-500/30 bg-red-500/10 text-red-400'} text-[10px] font-bold tracking-widest uppercase animate-pulse`}>
+                                        {scanSettings.realTimeProtection ? 'Real-time Protection Active' : 'Real-time Protection Disabled'}
+                                    </div>
+                                    <div className="px-4 py-1 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-[10px] font-bold tracking-widest uppercase">
+                                        Heuristic AI Engine
+                                    </div>
                                 </div>
                                 <h1 className="text-4xl md:text-7xl font-light text-white mb-2 tracking-tight">
                                     System is <span className="font-bold underline decoration-blue-500/50">Secure</span>
@@ -873,20 +963,40 @@ Response format: Simple markdown with headers.`,
                                 </Card>
 
                                 <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none md:col-span-2">
-                                    <CardContent className="p-6 flex items-center justify-between">
-                                        <div className="space-y-1">
-                                            <h3 className="text-sm font-bold uppercase tracking-widest text-white">Automated Remediation</h3>
-                                            <p className="text-[10px] text-slate-500 uppercase">Automatically quarantine critical threats without confirmation</p>
+                                    <CardContent className="p-6 flex flex-col gap-6">
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <h3 className="text-sm font-bold uppercase tracking-widest text-white">Real-time Protection</h3>
+                                                <p className="text-[10px] text-slate-500 uppercase">Continuously monitor file system and network for threats</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setScanSettings(prev => ({ ...prev, realTimeProtection: !prev.realTimeProtection }))}
+                                                className={`relative w-12 h-6 rounded-full transition-colors duration-300 flex items-center p-1 ${scanSettings.realTimeProtection ? 'bg-emerald-600 shadow-[0_0_15px_#10b981]' : 'bg-slate-800'}`}
+                                            >
+                                                <motion.div 
+                                                    animate={{ x: scanSettings.realTimeProtection ? 24 : 0 }}
+                                                    className="w-4 h-4 bg-white rounded-full shadow-lg"
+                                                />
+                                            </button>
                                         </div>
-                                        <button 
-                                            onClick={() => setScanSettings(prev => ({ ...prev, autoQuarantine: !prev.autoQuarantine }))}
-                                            className={`relative w-12 h-6 rounded-full transition-colors duration-300 flex items-center p-1 ${scanSettings.autoQuarantine ? 'bg-blue-600 shadow-[0_0_15px_#2563eb]' : 'bg-slate-800'}`}
-                                        >
-                                            <motion.div 
-                                                animate={{ x: scanSettings.autoQuarantine ? 24 : 0 }}
-                                                className="w-4 h-4 bg-white rounded-full shadow-lg"
-                                            />
-                                        </button>
+                                        
+                                        <Separator className="bg-white/5" />
+
+                                        <div className="flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <h3 className="text-sm font-bold uppercase tracking-widest text-white">Automated Remediation</h3>
+                                                <p className="text-[10px] text-slate-500 uppercase">Automatically quarantine critical threats without confirmation</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => setScanSettings(prev => ({ ...prev, autoQuarantine: !prev.autoQuarantine }))}
+                                                className={`relative w-12 h-6 rounded-full transition-colors duration-300 flex items-center p-1 ${scanSettings.autoQuarantine ? 'bg-blue-600 shadow-[0_0_15px_#2563eb]' : 'bg-slate-800'}`}
+                                            >
+                                                <motion.div 
+                                                    animate={{ x: scanSettings.autoQuarantine ? 24 : 0 }}
+                                                    className="w-4 h-4 bg-white rounded-full shadow-lg"
+                                                />
+                                            </button>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>
@@ -895,7 +1005,7 @@ Response format: Simple markdown with headers.`,
                                 <Button 
                                     variant="ghost" 
                                     className="text-slate-500 hover:text-white uppercase text-[10px] font-bold tracking-widest"
-                                    onClick={() => setScanSettings({ scanDepth: 'Deep', sensitivity: 'High', autoQuarantine: false, schedule: 'None' })}
+                                    onClick={() => setScanSettings({ scanDepth: 'Deep', sensitivity: 'High', autoQuarantine: false, schedule: 'None', realTimeProtection: true })}
                                 >
                                     Reset to Defaults
                                 </Button>
