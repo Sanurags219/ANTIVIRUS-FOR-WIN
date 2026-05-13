@@ -11,6 +11,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getGemini } from '@/lib/gemini';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Menu, X } from 'lucide-react';
 
 const THREAT_EXAMPLES = [
     { id: '1', name: 'Trojan.Win32.Generic', type: 'Trojan', severity: 'High', status: 'Blocked', path: 'C:/Users/Downloads/patch.exe', detectedAt: '2026-05-12 04:12:01', recommendations: ['Terminate process immediately', 'Perform full system backup', 'Enable real-time kernel protection'] },
@@ -32,10 +34,16 @@ export default function AntivirusApp() {
     const [activeView, setActiveView] = useState<'dashboard' | 'quarantine' | 'history' | 'settings'>('dashboard');
     const [isBoostActive, setIsBoostActive] = useState(false);
     const [isThreatModalOpen, setIsThreatModalOpen] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [boostTimer, setBoostTimer] = useState(0);
     const [scanHistory, setScanHistory] = useState([
         { id: 'h1', date: '2026-05-11', time: '14:30:22', status: 'Clean', threatsFound: 0 },
         { id: 'h2', date: '2026-05-10', time: '09:12:45', status: 'Threats Detected', threatsFound: 2 },
+        { id: 'h3', date: '2026-05-09', time: '21:05:10', status: 'Clean', threatsFound: 0 },
+        { id: 'h4', date: '2026-05-08', time: '11:45:30', status: 'Threats Detected', threatsFound: 5 },
+        { id: 'h5', date: '2026-05-07', time: '16:20:15', status: 'Clean', threatsFound: 0 },
+        { id: 'h6', date: '2026-05-06', time: '08:30:00', status: 'Threats Detected', threatsFound: 1 },
+        { id: 'h7', date: '2026-05-05', time: '13:10:45', status: 'Clean', threatsFound: 0 },
     ]);
     const [scanSettings, setScanSettings] = useState({
         scanDepth: 'Deep',
@@ -475,11 +483,67 @@ Response format: Simple markdown with headers.`,
                             </div>
                         )}
                     </div>
-
-                    <a href="#" className="hover:text-white transition-colors">Protection</a>
-                    <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                    <a href="#" className="hover:text-white transition-colors">Utilities</a>
                 </div>
+
+                {/* Mobile Menu Toggle */}
+                <div className="md:hidden flex items-center gap-4">
+                    <button 
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="p-2 text-slate-400 hover:text-white transition-colors"
+                    >
+                        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                </div>
+
+                {/* Mobile Menu Overlay */}
+                <AnimatePresence>
+                    {isMobileMenuOpen && (
+                        <motion.div 
+                            initial={{ opacity: 0, x: '100%' }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: '100%' }}
+                            className="fixed inset-0 top-20 bg-[#020408]/95 backdrop-blur-xl z-[100] p-10 flex flex-col gap-8 md:hidden"
+                        >
+                            {[
+                                { view: 'dashboard', label: 'Dashboard' },
+                                { view: 'quarantine', label: `Quarantine (${detectedThreats.filter(t => t.status === 'Quarantined').length})` },
+                                { view: 'history', label: 'Scan History' },
+                                { view: 'settings', label: 'Engine Settings' },
+                            ].map((item) => (
+                                <button 
+                                    key={item.view}
+                                    onClick={() => {
+                                        setActiveView(item.view as any);
+                                        setIsMobileMenuOpen(false);
+                                    }}
+                                    className={`text-2xl font-black uppercase tracking-widest text-left transition-all ${activeView === item.view ? 'text-blue-500 translate-x-4' : 'text-slate-500 hover:text-white'}`}
+                                >
+                                    {item.label}
+                                </button>
+                            ))}
+                            
+                            <div className="mt-auto border-t border-white/10 pt-8 flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <div className="text-[10px] text-slate-500 uppercase font-black">AI Scan Boost</div>
+                                    <div className={`text-sm font-bold ${isBoostActive ? 'text-blue-400' : 'text-slate-600'}`}>
+                                        {isBoostActive ? 'MAX PERFORMANCE' : 'LOCKED'}
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={toggleBoost}
+                                    className={`relative w-16 h-8 rounded-full transition-colors duration-300 flex items-center p-1.5 ${isBoostActive ? 'bg-blue-600 shadow-[0_0_20px_#2563eb]' : 'bg-slate-800'}`}
+                                >
+                                    <motion.div 
+                                        animate={{ x: isBoostActive ? 32 : 0 }}
+                                        className="w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-lg"
+                                    >
+                                        <Zap className={`w-3 h-3 ${isBoostActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                                    </motion.div>
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <div className="flex items-center gap-4">
                     <div className="text-right mr-2 hidden sm:block">
@@ -795,34 +859,161 @@ Response format: Simple markdown with headers.`,
                     ) : activeView === 'history' ? (
                         <div className="space-y-8 w-full">
                             {/* History View */}
-                            <div className="flex justify-between items-end">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
                                 <div className="space-y-2">
-                                    <div className="inline-block px-3 py-1 rounded bg-purple-500/10 text-purple-400 text-[10px] font-bold tracking-widest uppercase border border-purple-500/20">
+                                    <div className="inline-block px-3 py-1 rounded bg-blue-500/10 text-blue-400 text-[10px] font-bold tracking-widest uppercase border border-blue-500/20">
                                         SENTINEL LOGS
                                     </div>
-                                    <h1 className="text-4xl font-bold text-white tracking-tight uppercase italic">Scan <span className="text-purple-500 not-italic underline underline-offset-4 decoration-2">History</span></h1>
+                                    <h1 className="text-4xl font-bold text-white tracking-tight uppercase italic font-mono selection:bg-blue-500">Scan <span className="text-blue-500 not-italic underline underline-offset-4 decoration-2">History</span></h1>
                                     <p className="text-slate-400 text-sm max-w-md">Comprehensive audit trail of system scans and diagnostic operations performed by the Sentinel Core engine.</p>
                                 </div>
-                                <Button 
-                                    onClick={() => setActiveView('dashboard')}
-                                    variant="outline" 
-                                    className="border-white/10 text-white hover:bg-white/5 uppercase text-xs font-bold tracking-widest"
-                                >
-                                    Back to Dashboard
-                                </Button>
+                                <div className="flex gap-4">
+                                    <Button 
+                                        onClick={() => setScanHistory([])}
+                                        variant="outline" 
+                                        className="border-red-500/20 text-red-400 hover:bg-red-500/10 uppercase text-xs font-bold tracking-widest"
+                                    >
+                                        Clear History
+                                    </Button>
+                                    <Button 
+                                        onClick={() => setActiveView('dashboard')}
+                                        variant="outline" 
+                                        className="border-white/10 text-white hover:bg-white/5 uppercase text-xs font-bold tracking-widest"
+                                    >
+                                        Back to Dashboard
+                                    </Button>
+                                </div>
                             </div>
 
-                            <Separator className="bg-white/5" />
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Statistics Summary */}
+                                <div className="lg:col-span-1 space-y-6">
+                                    <Card className="bg-white/5 border border-white/5 rounded-none p-6">
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-blue-600/20 rounded border border-blue-500/30">
+                                                    <Activity className="w-6 h-6 text-blue-400" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-[10px] text-slate-500 uppercase font-black">Total Scans Executed</div>
+                                                    <div className="text-2xl font-mono font-bold text-white tracking-tighter">{scanHistory.length} Cycles</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-3 bg-red-600/20 rounded border border-red-500/30">
+                                                    <ShieldAlert className="w-6 h-6 text-red-400" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-[10px] text-slate-500 uppercase font-black">Cumulative Threats Blocked</div>
+                                                    <div className="text-2xl font-mono font-bold text-red-400 tracking-tighter">
+                                                        {scanHistory.reduce((acc, log) => acc + log.threatsFound, 0)} Items
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-4 border-t border-white/5 space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Engine Reliability</span>
+                                                    <span className="text-xs font-mono text-emerald-400">99.99%</span>
+                                                </div>
+                                                <Progress value={99} className="h-1 bg-white/5" />
+                                            </div>
+                                        </div>
+                                    </Card>
+
+                                    <Card className="bg-white/5 border border-white/5 rounded-none p-6">
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <Terminal className="w-4 h-4 text-blue-400" />
+                                                <span className="text-[10px] text-slate-300 uppercase font-black tracking-widest">Global Intelligence Feed</span>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {[
+                                                    "New Zero-Day vulnerability patched in Node.js runtime.",
+                                                    "Sentinel AI blocked 4.2M attacks in last 24h.",
+                                                    "Database synchronization complete (v9.42.0)."
+                                                ].map((news, i) => (
+                                                    <div key={i} className="text-[10px] text-slate-500 flex gap-3 leading-relaxed">
+                                                        <span className="text-blue-500 font-bold shrink-0">[{new Date().getHours() + i}:00]</span>
+                                                        {news}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </div>
+
+                                {/* Threat Trend Chart */}
+                                <div className="lg:col-span-2">
+                                    <Card className="bg-white/5 border border-white/5 rounded-none p-8 h-full flex flex-col">
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div>
+                                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Threat Vector Activity</CardTitle>
+                                                <CardDescription className="text-[10px] text-slate-500 uppercase mt-1 italic">Heuristic trend analysis over last 7 cycles</CardDescription>
+                                            </div>
+                                            <Badge variant="outline" className="text-blue-400 border-blue-500/20">SENTINEL-7 ANALYTICS</Badge>
+                                        </div>
+                                        <div className="flex-grow min-h-[300px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <AreaChart data={[...scanHistory].reverse()}>
+                                                    <defs>
+                                                        <linearGradient id="colorThreats" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <XAxis 
+                                                        dataKey="date" 
+                                                        stroke="#475569" 
+                                                        fontSize={10} 
+                                                        tickLine={false} 
+                                                        axisLine={false}
+                                                        tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                                                    />
+                                                    <YAxis 
+                                                        stroke="#475569" 
+                                                        fontSize={10} 
+                                                        tickLine={false} 
+                                                        axisLine={false} 
+                                                    />
+                                                    <Tooltip 
+                                                        contentStyle={{ backgroundColor: '#020408', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0' }}
+                                                        itemStyle={{ color: '#3b82f6', fontSize: '10px', textTransform: 'uppercase', fontWeight: 'bold' }}
+                                                        labelStyle={{ fontSize: '10px', color: '#94a3b8', marginBottom: '4px' }}
+                                                    />
+                                                    <Area 
+                                                        type="monotone" 
+                                                        dataKey="threatsFound" 
+                                                        stroke="#3b82f6" 
+                                                        strokeWidth={3}
+                                                        fillOpacity={1} 
+                                                        fill="url(#colorThreats)" 
+                                                        animationDuration={2000}
+                                                    />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </Card>
+                                </div>
+                            </div>
 
                             <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none overflow-hidden">
                                 <CardHeader className="border-b border-white/5 bg-white/5">
-                                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Execution Logs</CardTitle>
-                                    <CardDescription className="text-[10px] text-slate-500 uppercase mt-1">Audit trail of automated and manual scan cycles</CardDescription>
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <CardTitle className="text-sm font-bold uppercase tracking-widest text-white">Advanced Execution Logs</CardTitle>
+                                            <CardDescription className="text-[10px] text-slate-500 uppercase mt-1">Audit trail of automated and manual scan cycles</CardDescription>
+                                        </div>
+                                        <div className="flex gap-2 font-mono text-[10px] text-slate-500">
+                                            <span className="text-blue-500 font-bold">TOTAL ENTRIES:</span> {scanHistory.length}
+                                        </div>
+                                    </div>
                                 </CardHeader>
                                 <CardContent className="p-0">
                                     <ScrollArea className="h-[400px]">
                                         <table className="w-full text-left text-[11px] border-collapse">
-                                            <thead className="sticky top-0 bg-[#020408] text-slate-500 uppercase font-black border-b border-white/5">
+                                            <thead className="sticky top-0 bg-[#020408] text-slate-500 uppercase font-black border-b border-white/5 z-20">
                                                 <tr>
                                                     <th className="p-4 tracking-tighter">Scan Date</th>
                                                     <th className="p-4 tracking-tighter">Timestamp</th>
@@ -841,27 +1032,28 @@ Response format: Simple markdown with headers.`,
                                                                 log.status === 'Clean' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 
                                                                 'bg-red-500/20 text-red-400 border border-red-500/30'
                                                             }`}>
-                                                                {log.status === 'Clean' ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+                                                                {log.status === 'Clean' ? <ShieldCheck className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
                                                                 {log.status}
                                                             </div>
                                                         </td>
                                                         <td className="p-4 text-slate-400 italic">
                                                             {log.threatsFound > 0 ? (
-                                                                <span className="text-red-400/80 font-bold">{log.threatsFound} items flagged for review</span>
+                                                                <span className="text-red-400/80 font-bold tracking-tight">{log.threatsFound} malignant clusters identified</span>
                                                             ) : (
-                                                                "No security anomalies detected"
+                                                                <span className="text-emerald-500/60">System integrity verified - no anomalies detected</span>
                                                             )}
                                                         </td>
                                                         <td className="p-4 text-right">
-                                                            <button className="text-[10px] uppercase font-black text-blue-500 hover:underline underline-offset-4 opacity-50 group-hover:opacity-100 transition-opacity">View Details</button>
+                                                            <button className="text-[10px] uppercase font-black text-blue-500 hover:scale-110 transition-transform origin-right">Diagnostic Report</button>
                                                         </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                         </table>
                                         {scanHistory.length === 0 && (
-                                            <div className="py-20 flex flex-col items-center justify-center text-slate-600 italic">
-                                                No scan history available
+                                            <div className="py-24 flex flex-col items-center justify-center text-slate-700 italic space-y-4">
+                                                <Search className="w-12 h-12 opacity-20" />
+                                                <div className="text-[10px] uppercase font-bold tracking-widest">No archival scan data available</div>
                                             </div>
                                         )}
                                     </ScrollArea>
