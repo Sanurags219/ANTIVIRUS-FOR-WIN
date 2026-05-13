@@ -31,6 +31,7 @@ export default function AntivirusApp() {
     const [dailyTip, setDailyTip] = useState<string | null>(null);
     const [activeView, setActiveView] = useState<'dashboard' | 'quarantine' | 'history' | 'settings'>('dashboard');
     const [isBoostActive, setIsBoostActive] = useState(false);
+    const [isThreatModalOpen, setIsThreatModalOpen] = useState(false);
     const [boostTimer, setBoostTimer] = useState(0);
     const [scanHistory, setScanHistory] = useState([
         { id: 'h1', date: '2026-05-11', time: '14:30:22', status: 'Clean', threatsFound: 0 },
@@ -201,6 +202,7 @@ export default function AntivirusApp() {
 
     const analyzeThreat = async (threat: typeof THREAT_EXAMPLES[0]) => {
         setSelectedThreat(threat);
+        setIsThreatModalOpen(true);
         setIsAnalyzing(true);
         
         // Capture basic system info if available
@@ -284,6 +286,128 @@ Response format: Simple markdown with headers.`,
 
             {/* Background Atmospheric Glows */}
             <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-blue-900/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+            {/* Threat Detail Modal */}
+            <AnimatePresence>
+                {isThreatModalOpen && selectedThreat && (
+                    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsThreatModalOpen(false)}
+                            className="absolute inset-0 bg-[#020408]/80 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                            className="relative w-full max-w-2xl bg-slate-900 border border-blue-500/30 shadow-[0_0_50px_rgba(37,99,235,0.3)] rounded-none overflow-hidden"
+                        >
+                            <div className="bg-blue-600/20 border-b border-blue-500/20 p-6 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-500/10 rounded">
+                                        <ShieldAlert className="w-6 h-6 text-red-500" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white uppercase tracking-tight">{selectedThreat.name}</h2>
+                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Diagnostic Forensic Report</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setIsThreatModalOpen(false)}
+                                    className="p-2 text-slate-500 hover:text-white transition-colors border border-white/5 hover:border-white/20"
+                                >
+                                    <Zap className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <ScrollArea className="h-[70vh]">
+                                <CardContent className="p-8 space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-1">
+                                            <span className="text-[9px] text-slate-500 uppercase font-black">Classification</span>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="text-blue-400 border-blue-500/30 font-mono text-[10px]">{selectedThreat.type}</Badge>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <span className="text-[9px] text-slate-500 uppercase font-black">Threat Severity</span>
+                                            <div className={`text-xs font-bold uppercase ${selectedThreat.severity === 'Critical' ? 'text-red-500' : 'text-orange-500'}`}>
+                                                {selectedThreat.severity} Level
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1 md:col-span-2">
+                                            <span className="text-[9px] text-slate-500 uppercase font-black">Memory Address / Path</span>
+                                            <div className="p-3 bg-black/40 border border-white/5 rounded font-mono text-[11px] text-blue-300 break-all">
+                                                {selectedThreat.path}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <span className="text-[9px] text-slate-500 uppercase font-black">Detection Vector</span>
+                                            <div className="text-[11px] text-slate-300">Heuristic AI Engine v9.42</div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <span className="text-[9px] text-slate-500 uppercase font-black">Detected At</span>
+                                            <div className="text-[11px] text-emerald-400 font-mono">{selectedThreat.detectedAt}</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-blue-500/5 border-l-4 border-blue-500 space-y-3">
+                                        <div className="flex items-center gap-2 text-blue-400">
+                                            <Terminal className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Neural Signature Insights</span>
+                                        </div>
+                                        {isAnalyzing ? (
+                                            <div className="py-4 space-y-2 opacity-50 flex flex-col items-center">
+                                                <Activity className="w-8 h-8 text-blue-500 animate-spin" />
+                                                <span className="text-[10px] uppercase font-bold tracking-tighter">De-coding binary patterns...</span>
+                                            </div>
+                                        ) : (
+                                            <div className="text-xs leading-relaxed text-slate-400 italic">
+                                                {aiAnalysis || "Pending deep packet analysis..."}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Strategic Remediation Steps</span>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {selectedThreat.recommendations.map((rec, i) => (
+                                                <div key={i} className="flex items-center gap-4 p-4 bg-white/5 border border-white/5 hover:border-emerald-500/30 transition-colors">
+                                                    <div className="w-6 h-6 rounded bg-emerald-500/10 flex items-center justify-center text-[10px] font-bold text-emerald-500">
+                                                        {i + 1}
+                                                    </div>
+                                                    <span className="text-[11px] text-slate-200">{rec}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-6 flex flex-col sm:flex-row gap-4">
+                                        <Button 
+                                            size="lg" 
+                                            variant="outline"
+                                            onClick={() => handleQuarantine(selectedThreat.id)}
+                                            disabled={selectedThreat.status === 'Quarantined'}
+                                            className="flex-1 border-white/10 text-white font-black text-[10px] uppercase tracking-widest hover:bg-blue-600/20"
+                                        >
+                                            {selectedThreat.status === 'Quarantined' ? 'Safely Quarantined' : 'Initiate Isolation'}
+                                        </Button>
+                                        <Button 
+                                            size="lg" 
+                                            onClick={() => handlePurge(selectedThreat.id)}
+                                            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-black text-[10px] uppercase tracking-widest shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                                        >
+                                            Atomic Purge (Irreversible)
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </ScrollArea>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
             <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-emerald-900/10 rounded-full blur-[100px] pointer-events-none"></div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border border-white/[0.03] rounded-full pointer-events-none"></div>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/[0.05] rounded-full pointer-events-none"></div>
@@ -518,7 +642,7 @@ Response format: Simple markdown with headers.`,
                             {/* Secondary Data Sections */}
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-12 items-start">
                                 {/* Threat Log Table */}
-                                <div className={`${selectedThreat ? 'lg:col-span-7' : 'lg:col-span-12'} transition-all duration-500`}>
+                                <div className="lg:col-span-12">
                                     <Card className="bg-white/5 border border-white/5 backdrop-blur-sm rounded-none overflow-hidden">
                                         <CardHeader className="border-b border-white/5 bg-white/5">
                                             <div className="flex justify-between items-center">
@@ -573,110 +697,6 @@ Response format: Simple markdown with headers.`,
                                         </CardContent>
                                     </Card>
                                 </div>
-
-                                {/* Detailed Threat Information Section */}
-                                <AnimatePresence>
-                                    {selectedThreat && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: 20 }}
-                                            className="lg:col-span-5 space-y-4"
-                                        >
-                                            <Card className="bg-slate-900 border border-blue-500/30 shadow-[0_0_40px_rgba(37,99,235,0.2)] rounded-none overflow-hidden">
-                                                <CardHeader className="bg-blue-600/20 border-b border-blue-500/20 p-4">
-                                                    <div className="flex justify-between items-center">
-                                                        <div className="flex items-center gap-2">
-                                                            <AlertTriangle className="w-4 h-4 text-orange-400" />
-                                                            <span className="text-[10px] font-bold uppercase tracking-widest text-white">Diagnostic Insights</span>
-                                                        </div>
-                                                        <button onClick={() => setSelectedThreat(null)} className="text-slate-500 hover:text-white">
-                                                            <Zap className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                </CardHeader>
-                                                <CardContent className="p-6 space-y-6">
-                                                    {/* File Path & Detection Time */}
-                                                    <div className="grid grid-cols-1 gap-4">
-                                                        <div className="space-y-1">
-                                                            <span className="text-[9px] text-slate-500 uppercase font-black">Full File Path</span>
-                                                            <div className="text-[10px] font-mono text-blue-400 bg-black/40 p-2 border border-white/5 break-all">
-                                                                {selectedThreat.path}
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <span className="text-[9px] text-slate-500 uppercase font-black">Detection Timestamp</span>
-                                                            <div className="text-[10px] font-mono text-emerald-400">
-                                                                {selectedThreat.detectedAt}
-                                                            </div>
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <span className="text-[9px] text-slate-500 uppercase font-black">Current Status</span>
-                                                            <div className={`text-[10px] font-bold uppercase ${selectedThreat.status === 'Quarantined' ? 'text-blue-400 animate-pulse' : 'text-red-400'}`}>
-                                                                {selectedThreat.status}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <Separator className="bg-white/5" />
-
-                                                    {/* Recommended Actions */}
-                                                    <div className="space-y-3">
-                                                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Recommended Mitigation Protocol</span>
-                                                        <div className="space-y-2">
-                                                            {selectedThreat.recommendations.map((rec, i) => (
-                                                                <div key={i} className="flex items-center gap-3 text-[11px] text-slate-300 bg-white/5 p-2 border-l-2 border-emerald-500">
-                                                                    <div className="w-1 h-1 bg-emerald-500 rounded-full" />
-                                                                    {rec}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-
-                                                    <Separator className="bg-white/5" />
-
-                                                    {/* AI Deep Analysis Result */}
-                                                    <div className="space-y-3">
-                                                        <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-2">
-                                                            <Search className="w-3 h-3 text-blue-400" />
-                                                            Neural Signature Analysis
-                                                        </span>
-                                                        {isAnalyzing ? (
-                                                            <div className="py-8 flex flex-col items-center gap-3 animate-pulse">
-                                                                <Activity className="w-6 h-6 text-blue-500" />
-                                                                <span className="text-[9px] text-slate-600 uppercase">Parsing Global signatures...</span>
-                                                            </div>
-                                                        ) : (
-                                                            <ScrollArea className="h-40">
-                                                                <div className="text-[11px] leading-relaxed text-slate-400 font-sans italic p-2 bg-black/20">
-                                                                    {aiAnalysis || "Select 'Perform Deep Analysis' to generate AI forensic report."}
-                                                                </div>
-                                                            </ScrollArea>
-                                                        )}
-                                                    </div>
-
-                                                    <div className="grid grid-cols-2 gap-3 pt-4">
-                                                        <Button 
-                                                            size="sm" 
-                                                            onClick={() => handleQuarantine(selectedThreat.id)}
-                                                            disabled={selectedThreat.status === 'Quarantined'}
-                                                            className="bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] uppercase font-bold tracking-widest disabled:opacity-50"
-                                                        >
-                                                            {selectedThreat.status === 'Quarantined' ? 'Quarantined' : 'Quarantine'}
-                                                        </Button>
-                                                        <Button 
-                                                            size="sm" 
-                                                            onClick={() => handlePurge(selectedThreat.id)}
-                                                            className="bg-red-600 hover:bg-red-500 text-white text-[10px] uppercase font-bold tracking-widest border-b-2 border-red-900"
-                                                        >
-                                                            Purge Entity
-                                                        </Button>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
                             </div>
                         </div>
                     ) : activeView === 'quarantine' ? (
@@ -704,7 +724,11 @@ Response format: Simple markdown with headers.`,
                             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                 {detectedThreats.filter(t => t.status === 'Quarantined').length > 0 ? (
                                     detectedThreats.filter(t => t.status === 'Quarantined').map((threat) => (
-                                        <Card key={threat.id} className="bg-white/5 border-blue-500/30 rounded-none overflow-hidden hover:bg-white/10 transition-colors">
+                                        <Card 
+                                            key={threat.id} 
+                                            onClick={() => analyzeThreat(threat)}
+                                            className="bg-white/5 border-blue-500/30 rounded-none overflow-hidden hover:bg-white/10 transition-colors cursor-pointer group"
+                                        >
                                             <CardHeader className="bg-blue-600/10 border-b border-blue-500/20 p-4">
                                                 <CardTitle className="text-sm font-bold text-white uppercase flex items-center justify-between">
                                                     {threat.name}
