@@ -130,7 +130,7 @@ export default function AntivirusApp() {
             }, speed);
         }
         return () => clearInterval(interval);
-    }, [isScanning, scanProgress, isBoostActive]);
+    }, [isScanning, scanProgress, isBoostActive, detectedThreats.length]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -188,6 +188,12 @@ Response format: Simple markdown with headers.`,
             setIsAnalyzing(false);
         }
     };
+
+    const threatCategories = ['Trojan', 'Adware', 'Ransomware', 'Spyware'];
+    const threatCounts = threatCategories.reduce((acc, cat) => {
+        acc[cat] = detectedThreats.filter(t => t.type === cat).length;
+        return acc;
+    }, {} as Record<string, number>);
 
     return (
         <div className="min-h-screen bg-[#020408] text-slate-200 font-sans relative overflow-hidden flex flex-col">
@@ -350,6 +356,33 @@ Response format: Simple markdown with headers.`,
                                         </div>
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Threat Category Summary */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                                {threatCategories.map((cat, i) => (
+                                    <motion.div
+                                        key={cat}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: i * 0.05 }}
+                                        className="p-4 rounded-xl bg-white/5 border border-white/5 flex flex-col items-center justify-center space-y-2 group hover:bg-white/10 transition-all"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-1.5 h-1.5 rounded-full ${threatCounts[cat] > 0 ? 'bg-red-500 animate-pulse' : 'bg-slate-700'}`} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 group-hover:text-slate-300 transition-colors">{cat}</span>
+                                        </div>
+                                        <div className="text-2xl font-mono font-black text-white">
+                                            {threatCounts[cat]}
+                                        </div>
+                                        <div className="w-full h-0.5 bg-slate-800 rounded-full overflow-hidden">
+                                            <div 
+                                                className={`h-full ${threatCounts[cat] > 0 ? (cat === 'Ransomware' ? 'bg-red-500' : 'bg-orange-500') : 'bg-slate-700'}`} 
+                                                style={{ width: `${Math.min(100, (threatCounts[cat] / (detectedThreats.length || 1)) * 100)}%` }} 
+                                            />
+                                        </div>
+                                    </motion.div>
+                                ))}
                             </div>
 
                             {/* Stats Grid */}
